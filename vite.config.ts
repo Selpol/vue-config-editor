@@ -8,9 +8,9 @@ import dts from "vite-plugin-dts"
 export default defineConfig({
     build: {
         lib: {
-            name: "rx-lang-editor",
+            name: "vue-config-editor",
             entry: path.relative(__dirname, "lib/index.ts"),
-            fileName: (format) => `rx-config-editor.${format}.js`
+            fileName: (format) => `vue-config-editor.${format}.js`
         },
         rollupOptions: {
             external: ["vue"],
