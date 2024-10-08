@@ -26,7 +26,7 @@ npm install vue-code-editor
 
   import ConfigEditor, {AutocompleteType, Suggestion, SuggestionKey} from "vue-config-editor"
 
-  const value = ref("")
+  const value = ref("# Device\n\n[device]\nauth=ssh")
 
   const containerSuggestions: Suggestion[] = []
   const identifierSuggestions: SuggestionKey[] = []
