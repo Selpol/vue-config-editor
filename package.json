@@ -8,7 +8,7 @@
   "main": "./dist/vue-config-editor.umd.js",
   "module": "./dist/vue-config-editor.es.js",
   "types": "./dist/vue-config-editor.es.d.ts",
-  "version": "0.1.3",
+  "version": "0.2.1",
   "type": "module",
   "repository": {
     "type": "git",
