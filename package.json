@@ -1,0 +1,51 @@
+{
+  "name": "vue-config-editor",
+  "author": "Selpol",
+  "license": "MIT",
+  "files": [
+    "dist"
+  ],
+  "main": "./dist/vue-config-editor.umd.js",
+  "module": "./dist/vue-config-editor.es.js",
+  "types": "./dist/vue-config-editor.es.d.ts",
+  "version": "0.1.1",
+  "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Selpol/vue-config-editor.git"
+  },
+  "keywords": [
+    "vue"
+  ],
+  "exports": {
+    ".": {
+      "import": "./dist/vue-config-editor.es.js",
+      "require": "./dist/vue-config-editor.umd.js",
+      "types": "./dist/vue-config-editor.es.d.ts"
+    },
+    "./dist/*": "./dist/*",
+    "./package.json": "./package.json"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "vue-tsc -b && vite build",
+    "preview": "vite preview"
+  },
+  "peerDependencies": {
+    "vue": "3.*"
+  },
+  "devDependencies": {
+    "@lezer/highlight": "^1.2.1",
+    "@lezer/lr": "^1.4.2",
+    "@types/node": "^22.7.4",
+    "@vitejs/plugin-vue": "^5.1.2",
+    "codemirror": "^6.0.1",
+    "typescript": "^5.5.3",
+    "unplugin-lezer": "^1.0.1",
+    "vite": "^5.4.1",
+    "vite-plugin-dts": "^4.2.3",
+    "vue": "^3.4.37",
+    "vue-codemirror": "^6.1.1",
+    "vue-tsc": "^2.0.29"
+  }
+}

@@ -1,0 +1,37 @@
+@top Config { line* }
+
+@skip { Comment }
+
+line {
+    container | value
+}
+
+container {
+    Container ContainerIdentifier Container NewLine
+}
+
+value {
+    ValueIdentifier Assign (String | Number | Boolean)
+}
+
+@tokens {
+    Comment { "#" ![\n]* }
+    NewLine { "\n" }
+
+    Identifier { $[a-zA-Z0-9_ ]+ }
+    Separator { "." }
+    Assign { "=" }
+
+    Container { "[" | "]" }
+    ContainerIdentifier { (Identifier Separator?)+ }
+
+    ValueIdentifier { (Identifier Separator?)+ }
+
+    String { $[а-яА-Яa-zA-Z0-9_:/.,\-% ]+ (NewLine | @eof) }
+
+    Number { $[0-9.]+ (NewLine | @eof) }
+    Boolean { "true" | "false" (NewLine | @eof) }
+
+    @precedence { Number, String }
+    @precedence { Boolean, String }
+}

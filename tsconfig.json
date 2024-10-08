@@ -1,0 +1,19 @@
+{
+  "compilerOptions": {
+    "types": [
+      "@types/node"
+    ]
+  },
+  "files": [],
+  "references": [
+    {
+      "path": "./tsconfig.lib.json"
+    },
+    {
+      "path": "./tsconfig.app.json"
+    },
+    {
+      "path": "./tsconfig.node.json"
+    }
+  ]
+}
