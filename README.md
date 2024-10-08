@@ -24,7 +24,7 @@ npm install vue-code-editor
 <script setup lang="ts">
   import {ref} from "vue"
 
-  import ConfigEditor, {AutocompleteType, Suggestion, SuggestionKey} from "../lib"
+  import ConfigEditor, {AutocompleteType, Suggestion, SuggestionKey} from "vue-config-editor"
 
   const value = ref("")
 

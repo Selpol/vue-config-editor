@@ -30,13 +30,13 @@
     "dev": "vite",
     "build": "vue-tsc -b && vite build",
     "publish": "npm publish --access public",
-    "build:publish": "npm run build && npm run publish",
     "preview": "vite preview"
   },
   "peerDependencies": {
     "vue": "3.*"
   },
   "devDependencies": {
+    "@codemirror/lint": "^6.8.2",
     "@lezer/highlight": "^1.2.1",
     "@lezer/lr": "^1.4.2",
     "@types/node": "^22.7.4",

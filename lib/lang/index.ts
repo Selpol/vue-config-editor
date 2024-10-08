@@ -9,7 +9,7 @@ export const ConfigLELanguage = LRLanguage.define({
             styleTags({
                 "Comment": t.lineComment,
 
-                "Container": t.emphasis,
+                "ContainerStart ContainerEnd": t.emphasis,
                 "ContainerIdentifier": t.tagName,
                 "ValueIdentifier": t.string,
 

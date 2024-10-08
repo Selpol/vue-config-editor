@@ -7,7 +7,7 @@ line {
 }
 
 container {
-    Container ContainerIdentifier Container NewLine
+    ContainerStart ContainerIdentifier ContainerEnd NewLine
 }
 
 value {
@@ -22,8 +22,9 @@ value {
     Separator { "." }
     Assign { "=" }
 
-    Container { "[" | "]" }
+    ContainerStart { "[" }
     ContainerIdentifier { (Identifier Separator?)+ }
+    ContainerEnd { "]" }
 
     ValueIdentifier { (Identifier Separator?)+ }
 

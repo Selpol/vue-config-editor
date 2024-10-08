@@ -4,13 +4,14 @@ import {Codemirror} from "vue-codemirror"
 import {Extension} from "@codemirror/state"
 import {syntaxTree} from "@codemirror/language"
 import {CompletionContext, CompletionResult} from "@codemirror/autocomplete"
+import {linter} from "@codemirror/lint"
 
 import {SyntaxNode} from "@lezer/common"
 
 import {autocomplete, Suggestion, SuggestionKey} from "../index"
 
 import {config, ConfigLELanguage} from "../lang"
-import {findSuggestion} from "../util"
+import {findSuggestion, StateMachine, StateMachineContext} from "../util"
 
 export default defineComponent({
     props: {
@@ -246,6 +247,8 @@ export default defineComponent({
             return null
         }
 
+        const state = new StateMachine()
+
         const extensions: Extension[] = [
             config(),
             ConfigLELanguage.data.of({
@@ -262,6 +265,20 @@ export default defineComponent({
 
                     return autocompleteOther(node, context)
                 }
+            }),
+            linter(view => {
+                state.clear()
+
+                const context: StateMachineContext = {
+                    view,
+
+                    containerSuggestions: props.containerSuggestions,
+                    keySuggestions: props.keySuggestions
+                }
+
+                syntaxTree(view.state).cursor().iterate(node => state.process(context, node))
+
+                return state.diagnostics
             })
         ]
 
