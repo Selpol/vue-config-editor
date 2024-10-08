@@ -96,3 +96,7 @@ async function autocomplete(type: AutocompleteType, key: string, value?: string)
     return []
 }
 ```
+
+## License
+
+Licensed under the [MIT](./LICENSE) License.
