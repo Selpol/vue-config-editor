@@ -12,99 +12,68 @@ export interface StateMachineContext {
 }
 
 interface StateMachineItem {
-    enter(state: StateMachine, context: StateMachineContext, node: SyntaxNodeRef): string | undefined
+    readonly enter: [string | undefined, string]
+    readonly leave: string[]
 
-    leave(state: StateMachine, context: StateMachineContext, node: SyntaxNodeRef): void
-}
+    onEnter?(state: StateMachine, context: StateMachineContext, node: SyntaxNodeRef): void
 
-class StateMachineNewLine implements StateMachineItem {
-    public enter(_state: StateMachine, _context: StateMachineContext, node: SyntaxNodeRef): string | undefined {
-        if (node.name === "NewLine") {
-            return node.name
-        }
+    onLeave?(state: StateMachine, context: StateMachineContext, node: SyntaxNodeRef): void
 
-        return undefined
-    }
-
-    public leave(state: StateMachine, _context: StateMachineContext, _node: SyntaxNodeRef) {
-        state.state = undefined
-    }
+    onError?(state: StateMachine, context: StateMachineContext, node: SyntaxNodeRef): void
 }
 
 class StateMachineContainerStart implements StateMachineItem {
-    public enter(_state: StateMachine, _context: StateMachineContext, node: SyntaxNodeRef): string | undefined {
-        if (node.name === "ContainerStart") {
-            return node.name
-        }
+    public readonly enter: [string | undefined, string] = [undefined, "ContainerStart"]
+    public readonly leave: string[] = ["ContainerIdentifier"]
 
-        return undefined
-    }
-
-    public leave(state: StateMachine, _context: StateMachineContext, node: SyntaxNodeRef) {
-        if (node.name !== "ContainerIdentifier") {
-            state.diagnostics.push({
-                from: node.from,
-                to: node.to,
-                severity: "error",
-                message: "Container identifier missing"
-            })
-        }
+    public onError(state: StateMachine, _context: StateMachineContext, node: SyntaxNodeRef) {
+        state.diagnostics.push({
+            from: node.from,
+            to: node.to,
+            severity: "error",
+            message: "Container identifier missing"
+        })
     }
 }
 
 class StateMachineContainerIdentifier implements StateMachineItem {
-    public enter(state: StateMachine, context: StateMachineContext, node: SyntaxNodeRef): string | undefined {
-        if (node.name === "ContainerIdentifier") {
-            const value = context.view.state.sliceDoc(node.from, node.to)
-            const suggestion = findSuggestion(context.containerSuggestions, value)
+    public readonly enter: [string | undefined, string] = ["ContainerStart", "ContainerIdentifier"]
+    public readonly leave: string[] = ["ContainerEnd"]
 
-            if (!suggestion) {
-                state.diagnostics.push({
-                    from: node.from,
-                    to: node.to,
-                    severity: "warning",
-                    message: "Unknown container"
-                })
-            }
+    public onEnter(state: StateMachine, context: StateMachineContext, node: SyntaxNodeRef) {
+        const suggestion = findSuggestion(context.containerSuggestions, context.view.state.sliceDoc(node.from, node.to))
 
-            return node.name
-        }
-
-        return undefined
-    }
-
-    public leave(state: StateMachine, _context: StateMachineContext, node: SyntaxNodeRef) {
-        if (node.name !== "ContainerEnd") {
+        if (!suggestion) {
             state.diagnostics.push({
-                from: node.to - 1,
-                to: node.to - 1,
-                severity: "error",
-                message: "Container end missing",
-                actions: [
-                    {
-                        name: "Fix",
-                        apply(view, from, to) {
-                            view.dispatch({changes: {from, to, insert: "]"}})
-                        }
-                    }
-                ]
+                from: node.from,
+                to: node.to,
+                severity: "warning",
+                message: "Unknown container"
             })
         }
+    }
+
+    public onError(state: StateMachine, _context: StateMachineContext, node: SyntaxNodeRef) {
+        state.diagnostics.push({
+            from: node.to - 1,
+            to: node.to - 1,
+            severity: "error",
+            message: "Container end missing",
+            actions: [
+                {
+                    name: "Fix",
+                    apply(view, from, to) {
+                        view.dispatch({changes: {from, to, insert: "]"}})
+                    }
+                }
+            ]
+        })
     }
 }
 
 class StateMachineContainerEnd implements StateMachineItem {
-    public enter(_state: StateMachine, _context: StateMachineContext, node: SyntaxNodeRef): string | undefined {
-        if (node.name === "ContainerEnd") {
-            return node.name
-        }
-
-        return undefined
-    }
-
-    public leave(state: StateMachine, _context: StateMachineContext, _node: SyntaxNodeRef) {
-        state.state = undefined
-    }
+    public readonly enter: [string | undefined, string] = ["ContainerIdentifier", "ContainerEnd"]
+    public readonly leave: string[] = []
 }
 
 export default class StateMachine {
@@ -121,7 +90,6 @@ export default class StateMachine {
 
         this.item = undefined
         this.items = [
-            new StateMachineNewLine(),
             new StateMachineContainerStart(),
             new StateMachineContainerIdentifier(),
             new StateMachineContainerEnd()
@@ -129,24 +97,31 @@ export default class StateMachine {
     }
 
     public process(context: StateMachineContext, node: SyntaxNodeRef) {
-        for (let i = 0; i < this.items.length; i++) {
-            const state = this.items[i].enter(this, context, node)
-
-            if (state === undefined) {
-                continue
+        if (this.item && this.item.leave.length > 0 && !this.item.leave.includes(node.name)) {
+            if (this.item.onError) {
+                this.item.onError(this, context, node)
             }
 
-            this.state = state
-
-            if (this.item) {
-                this.item.leave(this, context, node)
-                this.item = undefined
-            }
-
-            this.item = this.items[i]
-
-            break
+            this.item = undefined
+            this.state = undefined
         }
+
+        const item = this.items.find(item => (item.enter[0] === undefined || item.enter[0] === this.state) && item.enter[1] === node.name)
+
+        if (!item) {
+            return
+        }
+
+        if (this.item && this.item.onLeave) {
+            this.item.onLeave(this, context, node)
+        }
+
+        if (item.onEnter) {
+            item.onEnter(this, context, node)
+        }
+
+        this.item = item
+        this.state = node.name
     }
 
     public clear() {

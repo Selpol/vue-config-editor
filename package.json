@@ -8,7 +8,7 @@
   "main": "./dist/vue-config-editor.umd.js",
   "module": "./dist/vue-config-editor.es.js",
   "types": "./dist/vue-config-editor.es.d.ts",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "type": "module",
   "repository": {
     "type": "git",
@@ -29,7 +29,7 @@
   "scripts": {
     "dev": "vite",
     "build": "vue-tsc -b && vite build",
-    "publish": "npm publish --access public",
+    "publish": "npm publish",
     "preview": "vite preview"
   },
   "peerDependencies": {
