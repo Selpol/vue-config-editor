@@ -11,7 +11,7 @@ import {SyntaxNode} from "@lezer/common"
 
 import {autocomplete, Suggestion, SuggestionKey} from "../index"
 
-import {config, ConfigLELanguage} from "../lang"
+import {config, ConfigLELanguage} from "../grammar"
 import {findSuggestion, StateMachine, StateMachineContext} from "../util"
 
 export default defineComponent({
@@ -168,6 +168,28 @@ export default defineComponent({
                     options: props.containerSuggestions
                         .map(item => ({label: item.value, detail: item.title, type: "constant"}))
                 }
+            } else if (node.name === "NewLine") {
+                if (context.state.sliceDoc(node.from, node.to).endsWith("\n")) {
+                    return {
+                        from: node.to,
+                        to: node.to,
+
+                        options: props.keySuggestions
+                            .map(item => ({label: item.value, detail: item.title, type: "type"}))
+                    }
+                }
+            } else if (["String", "Number", "Boolean"].includes(node.name)) {
+                const slice = context.state.sliceDoc(node.from, node.to)
+
+                if (slice[context.pos - node.from - 1] === "\n") {
+                    return {
+                        from: node.to,
+                        to: node.to,
+
+                        options: props.keySuggestions
+                            .map(item => ({label: item.value, detail: item.title, type: "type"}))
+                    }
+                }
             }
 
             let prev = node.prevSibling
@@ -179,16 +201,6 @@ export default defineComponent({
                     const value = context.state.sliceDoc(node.from, node.to).trim()
 
                     return await autocompleteNode(node, context.state.sliceDoc(prev.from, prev.to), value, 0)
-                }
-            } else if (["NewLine", "String", "Number", "Boolean"].includes(node.name)) {
-                if (context.state.sliceDoc(node.from, node.to).endsWith("\n")) {
-                    return {
-                        from: node.to,
-                        to: node.to,
-
-                        options: props.keySuggestions
-                            .map(item => ({label: item.value, detail: item.title, type: "type"}))
-                    }
                 }
             }
 
