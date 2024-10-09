@@ -10,12 +10,12 @@ import {ref} from "vue"
 
 import ConfigEditor, {AutocompleteType, Suggestion, SuggestionKey} from "../lib"
 
-const value = ref("# Device\n\n[device]\nauth=ssh")
+const value = ref("# Device\n\n[device.Debian]\nauth=ssh")
 
 const containerSuggestions: Suggestion[] = [
   {
     value: "device",
-    title: "Device",
+    title: "User device",
 
     suggestions: [
       {value: "Ubuntu", title: "Ubuntu Linux"},
@@ -29,7 +29,7 @@ const identifierSuggestions: SuggestionKey[] = [
     value: "auth",
     title: "Authorization",
 
-    assign: {default: "ssh", condition: "in:telnet,ssh"},
+    assign: {condition: "in:telnet,ssh"},
 
     suggestions: [
       {

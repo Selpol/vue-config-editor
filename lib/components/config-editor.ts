@@ -5,6 +5,7 @@ import {Extension} from "@codemirror/state"
 import {syntaxTree} from "@codemirror/language"
 import {CompletionContext, CompletionResult} from "@codemirror/autocomplete"
 import {linter} from "@codemirror/lint"
+import {hoverTooltip} from "@codemirror/view"
 
 import {SyntaxNode} from "@lezer/common"
 
@@ -301,6 +302,34 @@ export default defineComponent({
                 syntaxTree(view.state).cursor().iterate(node => state.process(context, node))
 
                 return state.diagnostics
+            }),
+            hoverTooltip((view, pos) => {
+                let node = syntaxTree(view.state).resolveInner(pos, -1)
+
+                if (node.name === "ContainerIdentifier" || node.name === "ValueIdentifier") {
+                    const value = view.state.sliceDoc(node.from, node.to)
+                    const index = value.indexOf(".", pos - node.from)
+
+                    const suggestion = findSuggestion(node.name === "ContainerIdentifier" ? props.containerSuggestions : props.keySuggestions, index != -1 ? value.substring(0, index) : value)
+
+                    if (suggestion) {
+                        return {
+                            pos,
+                            above: true,
+                            strictSide: true,
+                            arrow: true,
+                            create: () => {
+                                const element = document.createElement("div")
+                                element.className = "cm-tooltip-cursor"
+                                element.textContent = suggestion[1].title
+
+                                return {dom: element}
+                            }
+                        }
+                    }
+                }
+
+                return null
             })
         ]
 
