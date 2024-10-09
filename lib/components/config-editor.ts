@@ -1,18 +1,21 @@
-import {defineComponent, h, PropType} from "vue"
+import {defineComponent, h, type PropType} from "vue"
 import {Codemirror} from "vue-codemirror"
 
-import {Extension} from "@codemirror/state"
+import type {Extension} from "@codemirror/state"
 import {syntaxTree} from "@codemirror/language"
-import {CompletionContext, CompletionResult} from "@codemirror/autocomplete"
+import type {CompletionContext, CompletionResult} from "@codemirror/autocomplete"
 import {linter} from "@codemirror/lint"
 import {hoverTooltip} from "@codemirror/view"
 
-import {SyntaxNode} from "@lezer/common"
+import type {SyntaxNode} from "@lezer/common"
 
-import {autocomplete, Suggestion, SuggestionKey} from "../index"
+import type {autocomplete, Suggestion, SuggestionKey} from "../index"
 
 import {config, ConfigLELanguage} from "../grammar"
-import {findSuggestion, StateMachine, StateMachineContext} from "../util"
+import {findSuggestion, StateMachine, type StateMachineContext} from "../util"
+
+import type Lang from "../lang"
+import en from "../lang/en.ts"
 
 export default defineComponent({
     props: {
@@ -25,7 +28,9 @@ export default defineComponent({
 
         autocomplete: {type: Function as PropType<typeof autocomplete>, default: null},
 
-        extensions: {type: Array as PropType<Extension[]>, default: null}
+        extensions: {type: Array as PropType<Extension[]>, default: null},
+
+        lang: {type: Object as PropType<Lang>, default: () => en}
     },
     emits: ['update:modelValue'],
     setup(props, ctx) {
@@ -305,6 +310,7 @@ export default defineComponent({
                 state.clear()
 
                 const context: StateMachineContext = {
+                    lang: props.lang,
                     view,
 
                     containerSuggestions: props.containerSuggestions,

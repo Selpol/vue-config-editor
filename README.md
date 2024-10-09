@@ -97,6 +97,16 @@ async function autocomplete(type: AutocompleteType, key: string, value?: string)
 }
 ```
 
+### Custom lang
+
+```typescript
+import {Lang} from "vue-config-editor"
+
+const custom: Lang = {...}
+
+// <ConfigEditor :lang="custom" />
+```
+
 ## License
 
 Licensed under the [MIT](./LICENSE) License.

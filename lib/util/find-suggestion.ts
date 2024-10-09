@@ -1,4 +1,4 @@
-import {Suggestion, SuggestionKey} from "../index.ts"
+import type {Suggestion, SuggestionKey} from "../index.ts"
 
 export default function findSuggestion<T extends Suggestion>(suggestions: T[], key: string | string[]): [number, T] | undefined {
     if (suggestions.length == 0) {

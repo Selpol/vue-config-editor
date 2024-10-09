@@ -1,10 +1,11 @@
-import {SyntaxNodeRef} from "@lezer/common"
-import {Diagnostic} from "@codemirror/lint"
+import type {SyntaxNodeRef} from "@lezer/common"
+import type {Diagnostic} from "@codemirror/lint"
 import {EditorView} from "codemirror"
 
-import {findSuggestion, Suggestion, SuggestionKey} from "../index.ts"
+import {type Lang, findSuggestion, type Suggestion, type SuggestionKey} from "../index.ts"
 
 export interface StateMachineContext {
+    lang: Lang
     view: EditorView
 
     containerSuggestions: Suggestion[]
@@ -28,12 +29,12 @@ class StateMachineContainerStart implements StateMachineItem {
     public readonly enter: StateMachineItemEnter = [undefined, ["ContainerStart"]]
     public readonly leave: string[] = ["ContainerIdentifier"]
 
-    public onError(state: StateMachine, _context: StateMachineContext, node: SyntaxNodeRef) {
+    public onError(state: StateMachine, context: StateMachineContext, node: SyntaxNodeRef) {
         state.diagnostics.push({
             from: node.from,
             to: node.to,
             severity: "error",
-            message: "Container identifier missing"
+            message: context.lang.lint.container.identifier
         })
     }
 }
@@ -50,20 +51,20 @@ class StateMachineContainerIdentifier implements StateMachineItem {
                 from: node.from,
                 to: node.to,
                 severity: "warning",
-                message: "Unknown container"
+                message: context.lang.lint.container.unknown
             })
         }
     }
 
-    public onError(state: StateMachine, _context: StateMachineContext, node: SyntaxNodeRef) {
+    public onError(state: StateMachine, context: StateMachineContext, node: SyntaxNodeRef) {
         state.diagnostics.push({
             from: node.to - 1,
             to: node.to - 1,
             severity: "error",
-            message: "Container end missing",
+            message: context.lang.lint.container.end,
             actions: [
                 {
-                    name: "Fix",
+                    name: context.lang.lint.fix,
                     apply(view, from, to) {
                         view.dispatch({changes: {from, to, insert: "]"}})
                     }
@@ -90,17 +91,17 @@ class StateMachineValueStart implements StateMachineItem {
                 from: node.from,
                 to: node.to,
                 severity: "warning",
-                message: "Unknown value"
+                message: context.lang.lint.value.unknown
             })
         }
     }
 
-    onError(state: StateMachine, _context: StateMachineContext, node: SyntaxNodeRef) {
+    onError(state: StateMachine, context: StateMachineContext, node: SyntaxNodeRef) {
         state.diagnostics.push({
-            from: node.to,
-            to: node.to,
+            from: node.to - 1,
+            to: node.to - 1,
             severity: "error",
-            message: "Value assign missing",
+            message: context.lang.lint.value.assign,
             actions: [
                 {
                     name: "Fix",
@@ -117,12 +118,12 @@ class StateMachineValueAssign implements StateMachineItem {
     public readonly enter: StateMachineItemEnter = ["ValueIdentifier", ["Assign"]]
     public readonly leave: string[] = ["String", "Number", "Boolean"]
 
-    onError(state: StateMachine, _context: StateMachineContext, node: SyntaxNodeRef) {
+    onError(state: StateMachine, context: StateMachineContext, node: SyntaxNodeRef) {
         state.diagnostics.push({
             from: node.from,
             to: node.to,
             severity: "error",
-            message: "Value missing"
+            message: context.lang.lint.value.missing
         })
     }
 }
@@ -149,10 +150,10 @@ class StateMachineValueEnd implements StateMachineItem {
                             from: prev.from,
                             to: node.to,
                             severity: "hint",
-                            message: "Default value",
+                            message: context.lang.lint.value.default,
                             actions: [
                                 {
-                                    name: "Remove",
+                                    name: context.lang.lint.remove,
                                     apply(view, from, to) {
                                         view.dispatch({changes: {from, to}})
                                     }
@@ -168,7 +169,7 @@ class StateMachineValueEnd implements StateMachineItem {
                                     from: node.from,
                                     to: node.to,
                                     severity: "error",
-                                    message: "Unknown enum value"
+                                    message: context.lang.lint.value.enum
                                 })
                             }
                         } else if (assign.condition.startsWith("between:")) {
@@ -180,7 +181,7 @@ class StateMachineValueEnd implements StateMachineItem {
                                     from: node.from,
                                     to: node.to,
                                     severity: "error",
-                                    message: "Value is out of range " + values[0] + "-" + values[1]
+                                    message: context.lang.lint.value.range + " " + values[0] + "-" + values[1]
                                 })
                             }
                         }
@@ -193,7 +194,7 @@ class StateMachineValueEnd implements StateMachineItem {
                                     from: node.from,
                                     to: node.to,
                                     severity: "error",
-                                    message: "Value is not float"
+                                    message: context.lang.lint.value.float
                                 })
                             }
                         } else if (assign.type == "int") {
@@ -202,7 +203,7 @@ class StateMachineValueEnd implements StateMachineItem {
                                     from: node.from,
                                     to: node.to,
                                     severity: "error",
-                                    message: "Value is not int"
+                                    message: context.lang.lint.value.int
                                 })
                             }
                         } else if (assign.type == "bool") {
@@ -211,7 +212,7 @@ class StateMachineValueEnd implements StateMachineItem {
                                     from: node.from,
                                     to: node.to,
                                     severity: "error",
-                                    message: "Value is not bool"
+                                    message: context.lang.lint.value.bool
                                 })
                             }
                         }

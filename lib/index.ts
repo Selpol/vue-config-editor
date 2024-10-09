@@ -1,4 +1,5 @@
-import {ConfigEditor} from "./components"
+import ConfigEditor from "./components/config-editor.ts"
+import type Lang from "./lang"
 
 export type SuggestionType = "namespace" | "value" | "variable"
 export type AutocompleteType = "container" | "key" | "variable" | "value"
@@ -30,4 +31,5 @@ export declare function autocomplete(type: AutocompleteType, key: string, value?
 
 export {findSuggestion} from "./util"
 
+export {Lang}
 export default ConfigEditor
