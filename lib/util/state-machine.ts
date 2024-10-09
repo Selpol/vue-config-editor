@@ -11,8 +11,10 @@ export interface StateMachineContext {
     keySuggestions: SuggestionKey[]
 }
 
+type StateMachineItemEnter = [string | undefined, string[]]
+
 interface StateMachineItem {
-    readonly enter: [string | undefined, string]
+    readonly enter: StateMachineItemEnter
     readonly leave: string[]
 
     onEnter?(state: StateMachine, context: StateMachineContext, node: SyntaxNodeRef): void
@@ -23,7 +25,7 @@ interface StateMachineItem {
 }
 
 class StateMachineContainerStart implements StateMachineItem {
-    public readonly enter: [string | undefined, string] = [undefined, "ContainerStart"]
+    public readonly enter: StateMachineItemEnter = [undefined, ["ContainerStart"]]
     public readonly leave: string[] = ["ContainerIdentifier"]
 
     public onError(state: StateMachine, _context: StateMachineContext, node: SyntaxNodeRef) {
@@ -37,7 +39,7 @@ class StateMachineContainerStart implements StateMachineItem {
 }
 
 class StateMachineContainerIdentifier implements StateMachineItem {
-    public readonly enter: [string | undefined, string] = ["ContainerStart", "ContainerIdentifier"]
+    public readonly enter: StateMachineItemEnter = ["ContainerStart", ["ContainerIdentifier"]]
     public readonly leave: string[] = ["ContainerEnd"]
 
     public onEnter(state: StateMachine, context: StateMachineContext, node: SyntaxNodeRef) {
@@ -72,7 +74,7 @@ class StateMachineContainerIdentifier implements StateMachineItem {
 }
 
 class StateMachineContainerEnd implements StateMachineItem {
-    public readonly enter: [string | undefined, string] = ["ContainerIdentifier", "ContainerEnd"]
+    public readonly enter: StateMachineItemEnter = ["ContainerIdentifier", ["ContainerEnd"]]
     public readonly leave: string[] = []
 }
 
@@ -97,16 +99,22 @@ export default class StateMachine {
     }
 
     public process(context: StateMachineContext, node: SyntaxNodeRef) {
-        if (this.item && this.item.leave.length > 0 && !this.item.leave.includes(node.name)) {
-            if (this.item.onError) {
-                this.item.onError(this, context, node)
-            }
+        if (this.item) {
+            if (this.item.leave.length > 0) {
+                if (!this.item.leave.includes(node.name)) {
+                    if (this.item.onError) {
+                        this.item.onError(this, context, node)
+                    }
 
-            this.item = undefined
-            this.state = undefined
+                    this.item = undefined
+                    this.state = undefined
+                }
+            } else {
+                this.state = undefined
+            }
         }
 
-        const item = this.items.find(item => (item.enter[0] === undefined || item.enter[0] === this.state) && item.enter[1] === node.name)
+        const item = this.items.find(item => (item.enter[0] === undefined || item.enter[0] === this.state) && item.enter[1].includes(node.name))
 
         if (!item) {
             return
