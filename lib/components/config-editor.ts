@@ -23,17 +23,19 @@ export default defineComponent({
         keySuggestions: {type: Array as PropType<SuggestionKey[]>, required: true},
 
         autocomplete: {type: Function as PropType<typeof autocomplete>, default: null},
+
+        extensions: {type: Array as PropType<Extension[]>, default: null}
     },
     emits: ['update:modelValue'],
     setup(props, ctx) {
         async function autocompleteContainer(node: SyntaxNode, context: CompletionContext): Promise<CompletionResult | null> {
             const segments = context.state.sliceDoc(node.from, node.to).split(".")
 
-            if (segments.length == 0 || segments[0] == "") {
+            if (segments.length === 0 || segments[0] === "") {
                 return null
             }
 
-            if (segments.length == 1) {
+            if (segments.length === 1) {
                 const req = new RegExp(segments[0], "i")
 
                 return {
@@ -78,7 +80,7 @@ export default defineComponent({
         async function autocompleteKey(node: SyntaxNode, context: CompletionContext): Promise<CompletionResult | null> {
             const segments = context.state.sliceDoc(node.from, node.to).split(".")
 
-            if (segments.length == 0 || segments[0] == "") {
+            if (segments.length === 0 || segments[0] === "") {
                 return null
             }
 
@@ -146,7 +148,7 @@ export default defineComponent({
         async function autocompleteAssign(node: SyntaxNode, context: CompletionContext): Promise<CompletionResult | null> {
             const prev = node.prevSibling
 
-            if (prev && prev.name == "ValueIdentifier") {
+            if (prev && prev.name === "ValueIdentifier") {
                 const next = node.nextSibling
                 const value = (next ? context.state.sliceDoc(next.from, next.to) : "").trim()
 
@@ -157,12 +159,32 @@ export default defineComponent({
         }
 
         async function autocompleteOther(node: SyntaxNode, context: CompletionContext): Promise<CompletionResult | null> {
+            if (node.name === "ContainerStart") {
+                return {
+                    from: node.to,
+                    to: node.to,
+
+                    options: props.containerSuggestions
+                        .map(item => ({label: item.value, detail: item.title, type: "constant"}))
+                }
+            } else if (["NewLine", "String", "Number", "Boolean"].includes(node.name)) {
+                if (context.state.sliceDoc(node.from, node.to).endsWith("\n")) {
+                    return {
+                        from: node.to,
+                        to: node.to,
+
+                        options: props.keySuggestions
+                            .map(item => ({label: item.value, detail: item.title, type: "type"}))
+                    }
+                }
+            }
+
             let prev = node.prevSibling
 
-            if (prev && prev.name == "Assign") {
+            if (prev && prev.name === "Assign") {
                 prev = prev.prevSibling
 
-                if (prev && prev.name == "ValueIdentifier") {
+                if (prev && prev.name === "ValueIdentifier") {
                     const value = context.state.sliceDoc(node.from, node.to).trim()
 
                     return await autocompleteNode(node, context.state.sliceDoc(prev.from, prev.to), value, 0)
@@ -191,7 +213,7 @@ export default defineComponent({
                             from: node.from + offset,
 
                             options: values
-                                .filter(item => value == '' || reg.test(item))
+                                .filter(item => value === '' || reg.test(item))
                                 .map(item => ({label: item, type: "enum"}))
                         }
                     } else if (condition.startsWith("between:")) {
@@ -255,11 +277,11 @@ export default defineComponent({
                 autocomplete: (context: CompletionContext): Promise<CompletionResult | null> | CompletionResult | null => {
                     let node = syntaxTree(context.state).resolveInner(context.pos, -1)
 
-                    if (node.name == "ContainerIdentifier") {
+                    if (node.name === "ContainerIdentifier") {
                         return autocompleteContainer(node, context)
-                    } else if (node.name == "ValueIdentifier") {
+                    } else if (node.name === "ValueIdentifier") {
                         return autocompleteKey(node, context)
-                    } else if (node.name == "Assign") {
+                    } else if (node.name === "Assign") {
                         return autocompleteAssign(node, context)
                     }
 
@@ -281,6 +303,10 @@ export default defineComponent({
                 return state.diagnostics
             })
         ]
+
+        if (props.extensions && props.extensions.length > 0) {
+            extensions.push(...props.extensions)
+        }
 
         return () => h(Codemirror, {
             modelValue: props.modelValue,
