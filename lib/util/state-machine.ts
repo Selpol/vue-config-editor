@@ -78,6 +78,150 @@ class StateMachineContainerEnd implements StateMachineItem {
     public readonly leave: string[] = []
 }
 
+class StateMachineValueStart implements StateMachineItem {
+    public readonly enter: StateMachineItemEnter = [undefined, ["ValueIdentifier"]]
+    public readonly leave: string[] = ["Assign"]
+
+    public onEnter(state: StateMachine, context: StateMachineContext, node: SyntaxNodeRef) {
+        const suggestion = findSuggestion(context.keySuggestions, context.view.state.sliceDoc(node.from, node.to))
+
+        if (!suggestion) {
+            state.diagnostics.push({
+                from: node.from,
+                to: node.to,
+                severity: "warning",
+                message: "Unknown value"
+            })
+        }
+    }
+
+    onError(state: StateMachine, _context: StateMachineContext, node: SyntaxNodeRef) {
+        state.diagnostics.push({
+            from: node.to,
+            to: node.to,
+            severity: "error",
+            message: "Value assign missing",
+            actions: [
+                {
+                    name: "Fix",
+                    apply(view, from, to) {
+                        view.dispatch({changes: {from, to, insert: "="}})
+                    }
+                }
+            ]
+        })
+    }
+}
+
+class StateMachineValueAssign implements StateMachineItem {
+    public readonly enter: StateMachineItemEnter = ["ValueIdentifier", ["Assign"]]
+    public readonly leave: string[] = ["String", "Number", "Boolean"]
+
+    onError(state: StateMachine, _context: StateMachineContext, node: SyntaxNodeRef) {
+        state.diagnostics.push({
+            from: node.from,
+            to: node.to,
+            severity: "error",
+            message: "Value missing"
+        })
+    }
+}
+
+class StateMachineValueEnd implements StateMachineItem {
+    public readonly enter: StateMachineItemEnter = ["Assign", ["String", "Number", "Boolean"]]
+    public readonly leave: string[] = []
+
+    onEnter(state: StateMachine, context: StateMachineContext, node: SyntaxNodeRef) {
+        let prev = node.node.prevSibling
+
+        if (prev && prev.name === "Assign") {
+            prev = prev.prevSibling
+
+            if (prev && prev.name === "ValueIdentifier") {
+                const suggestion = findSuggestion(context.keySuggestions, context.view.state.sliceDoc(prev.from, prev.to))
+
+                if (suggestion && suggestion[1].assign) {
+                    const value = context.view.state.sliceDoc(node.from, node.to).trim()
+                    const assign = suggestion[1].assign
+
+                    if (assign.default && assign.default == value) {
+                        state.diagnostics.push({
+                            from: prev.from,
+                            to: node.to,
+                            severity: "hint",
+                            message: "Default value",
+                            actions: [
+                                {
+                                    name: "Remove",
+                                    apply(view, from, to) {
+                                        view.dispatch({changes: {from, to}})
+                                    }
+                                }
+                            ]
+                        })
+                    } else if (assign.condition) {
+                        if (assign.condition.startsWith("in:")) {
+                            const segments = assign.condition.substring(3).split(",")
+
+                            if (!segments.includes(value)) {
+                                state.diagnostics.push({
+                                    from: node.from,
+                                    to: node.to,
+                                    severity: "error",
+                                    message: "Unknown enum value"
+                                })
+                            }
+                        } else if (assign.condition.startsWith("between:")) {
+                            const parse = parseInt(value)
+                            const values = assign.condition.substring(8).split(",").map(item => parseInt(item)).filter(item => !isNaN(item))
+
+                            if (values.length == 2 && (parse < values[0] || parse > values[1])) {
+                                state.diagnostics.push({
+                                    from: node.from,
+                                    to: node.to,
+                                    severity: "error",
+                                    message: "Value is out of range " + values[0] + "-" + values[1]
+                                })
+                            }
+                        }
+                    }
+
+                    if (assign.type) {
+                        if (assign.type == "float") {
+                            if (isNaN(parseFloat(value))) {
+                                state.diagnostics.push({
+                                    from: node.from,
+                                    to: node.to,
+                                    severity: "error",
+                                    message: "Value is not float"
+                                })
+                            }
+                        } else if (assign.type == "int") {
+                            if (isNaN(parseInt(value))) {
+                                state.diagnostics.push({
+                                    from: node.from,
+                                    to: node.to,
+                                    severity: "error",
+                                    message: "Value is not int"
+                                })
+                            }
+                        } else if (assign.type == "bool") {
+                            if (!["true", "false"].includes(value)) {
+                                state.diagnostics.push({
+                                    from: node.from,
+                                    to: node.to,
+                                    severity: "error",
+                                    message: "Value is not bool"
+                                })
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
 export default class StateMachine {
     public state: string | undefined
 
@@ -94,7 +238,11 @@ export default class StateMachine {
         this.items = [
             new StateMachineContainerStart(),
             new StateMachineContainerIdentifier(),
-            new StateMachineContainerEnd()
+            new StateMachineContainerEnd(),
+
+            new StateMachineValueStart(),
+            new StateMachineValueAssign(),
+            new StateMachineValueEnd()
         ]
     }
 

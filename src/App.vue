@@ -29,7 +29,7 @@ const identifierSuggestions: SuggestionKey[] = [
     value: "auth",
     title: "Authorization",
 
-    assign: {condition: "in:telnet,ssh"},
+    assign: {default: "ssh", condition: "in:telnet,ssh"},
 
     suggestions: [
       {
@@ -37,7 +37,7 @@ const identifierSuggestions: SuggestionKey[] = [
         value: "tty",
         title: "Tty",
 
-        assign: {condition: "in:telnet,ssh"},
+        assign: {default: "ssh", condition: "in:telnet,ssh"},
 
         suggestions: [
           {type: "value", value: "user", title: "User for login", assign: {example: "root,user"}},
