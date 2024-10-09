@@ -168,16 +168,6 @@ export default defineComponent({
                     options: props.containerSuggestions
                         .map(item => ({label: item.value, detail: item.title, type: "constant"}))
                 }
-            } else if (["NewLine", "String", "Number", "Boolean"].includes(node.name)) {
-                if (context.state.sliceDoc(node.from, node.to).endsWith("\n")) {
-                    return {
-                        from: node.to,
-                        to: node.to,
-
-                        options: props.keySuggestions
-                            .map(item => ({label: item.value, detail: item.title, type: "type"}))
-                    }
-                }
             }
 
             let prev = node.prevSibling
@@ -189,6 +179,16 @@ export default defineComponent({
                     const value = context.state.sliceDoc(node.from, node.to).trim()
 
                     return await autocompleteNode(node, context.state.sliceDoc(prev.from, prev.to), value, 0)
+                }
+            } else if (["NewLine", "String", "Number", "Boolean"].includes(node.name)) {
+                if (context.state.sliceDoc(node.from, node.to).endsWith("\n")) {
+                    return {
+                        from: node.to,
+                        to: node.to,
+
+                        options: props.keySuggestions
+                            .map(item => ({label: item.value, detail: item.title, type: "type"}))
+                    }
                 }
             }
 
