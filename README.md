@@ -7,7 +7,7 @@ Pseudo toml config editor with suggestions
 ### Install
 
 ```shell
-npm install vue-code-editor
+npm install vue-config-editor
 ```
 
 ### Local component
