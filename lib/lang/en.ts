@@ -12,8 +12,6 @@ const en: Lang = {
         },
 
         value: {
-            default: "Default value",
-
             unknown: "Unknown value",
             assign: "Value assign missing",
             missing: "Value missing",
