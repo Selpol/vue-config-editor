@@ -9,7 +9,7 @@ import {hoverTooltip} from "@codemirror/view"
 
 import type {SyntaxNode} from "@lezer/common"
 
-import type {autocomplete, Suggestion, SuggestionKey} from "../index"
+import {autocomplete, findSuggestionStack, Suggestion, SuggestionKey} from "../index"
 
 import {config, ConfigLELanguage} from "../grammar"
 import {findSuggestion, StateMachine, type StateMachineContext} from "../util"
@@ -336,9 +336,9 @@ export default defineComponent({
                     const value = view.state.sliceDoc(node.from, node.to)
                     const index = value.indexOf(".", pos - node.from)
 
-                    const result = findSuggestion(node.name === "ContainerIdentifier" ? props.containerSuggestions : props.keySuggestions, index != -1 ? value.substring(0, index) : value)
+                    const suggestions = findSuggestionStack(node.name === "ContainerIdentifier" ? props.containerSuggestions : props.keySuggestions, index != -1 ? value.substring(0, index) : value)
 
-                    if (result.suggestion) {
+                    if (suggestions.length > 0) {
                         return {
                             pos,
                             above: true,
@@ -347,7 +347,8 @@ export default defineComponent({
                             create: () => {
                                 const element = document.createElement("div")
                                 element.className = "cm-tooltip-cursor"
-                                element.textContent = result.suggestion!.title
+                                element.style.padding = "3px 6px 3px 8px"
+                                element.textContent = suggestions.map(item => item.title).join(" > ")
 
                                 return {dom: element}
                             }

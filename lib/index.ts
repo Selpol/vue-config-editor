@@ -29,7 +29,7 @@ export interface SuggestionKey extends Suggestion {
 
 export declare function autocomplete(type: AutocompleteType, key: string, value?: string): Promise<string[]> | string[];
 
-export {findSuggestion} from "./util"
+export {findSuggestion, findSuggestionStack, type FindSuggestionResult} from "./util"
 
 export {Lang}
 export default ConfigEditor

@@ -145,22 +145,7 @@ class StateMachineValueEnd implements StateMachineItem {
                     const value = context.view.state.sliceDoc(node.from, node.to).trim()
                     const assign = result.suggestion.assign
 
-                    if (assign.default && assign.default === value) {
-                        state.diagnostics.push({
-                            from: prev.from,
-                            to: node.to,
-                            severity: "hint",
-                            message: context.lang.lint.value.default,
-                            actions: [
-                                {
-                                    name: context.lang.lint.remove,
-                                    apply(view, from, to) {
-                                        view.dispatch({changes: {from, to}})
-                                    }
-                                }
-                            ]
-                        })
-                    } else if (assign.condition) {
+                    if (assign.condition) {
                         if (assign.condition.startsWith("in:")) {
                             const segments = assign.condition.substring(3).split(",")
 
