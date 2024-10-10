@@ -54,17 +54,17 @@ export default defineComponent({
                 }
             }
 
-            const suggestion = findSuggestion(props.containerSuggestions, segments.slice(0, segments.length - 1))
+            const result = findSuggestion(props.containerSuggestions, segments.slice(0, segments.length - 1))
 
-            if (suggestion) {
-                if (suggestion[1].suggestions) {
-                    const req = new RegExp(segments[suggestion[0]], "i")
+            if (result.suggestion) {
+                if (result.suggestion.suggestions) {
+                    const req = new RegExp(segments[result.index], "i")
 
                     return {
                         from: node.from + segments.reduce((a, b) => a + b.length, 0) + segments.length - segments[segments.length - 1].length - 1,
                         to: node.to,
 
-                        options: suggestion[1].suggestions
+                        options: result.suggestion.suggestions
                             .filter(item => req.test(item.value))
                             .map(item => ({label: item.value, detail: item.title, type: "constant"}))
                     }
@@ -103,13 +103,13 @@ export default defineComponent({
                 }
             }
 
-            let suggestion = findSuggestion(props.keySuggestions, segments.slice(0, segments.length - 1))
+            let result = findSuggestion(props.keySuggestions, segments.slice(0, segments.length - 1))
 
-            if (suggestion) {
-                if (suggestion[1].suggestions) {
+            if (result.suggestion) {
+                if (result.suggestion.suggestions) {
                     const req = new RegExp(segments[segments.length - 1], "i")
 
-                    const suggestions = suggestion[1].suggestions.filter(item => req.test(item.value))
+                    const suggestions = result.suggestion.suggestions.filter(item => req.test(item.value))
 
                     if (suggestions.length) {
                         return {
@@ -124,7 +124,7 @@ export default defineComponent({
                         }
                     }
 
-                    let variableSuggestion = suggestion[1].suggestions.find(item => item.type == "variable")
+                    let variableSuggestion = result.suggestion.suggestions.find(item => item.type == "variable")
 
                     if (variableSuggestion) {
                         const values = await props.autocomplete("variable", segments.slice(0, segments.length - 1).join(".") + "." + variableSuggestion.value, segments[segments.length - 1])
@@ -173,6 +173,14 @@ export default defineComponent({
                     options: props.containerSuggestions
                         .map(item => ({label: item.value, detail: item.title, type: "constant"}))
                 }
+            } else if (node.name === "Config") {
+                return {
+                    from: 0,
+                    to: 0,
+
+                    options: props.keySuggestions
+                        .map(item => ({label: item.value, detail: item.title, type: "type"}))
+                }
             } else if (node.name === "NewLine") {
                 if (context.state.sliceDoc(node.from, node.to).endsWith("\n")) {
                     return {
@@ -213,15 +221,15 @@ export default defineComponent({
         }
 
         async function autocompleteNode(node: SyntaxNode, key: string, value: string, offset: number): Promise<CompletionResult | null> {
-            const suggestion = findSuggestion(props.keySuggestions, key)
+            const result = findSuggestion(props.keySuggestions, key)
 
-            if (!suggestion) {
+            if (!result.suggestion) {
                 return null
             }
 
-            if (suggestion[1].assign) {
-                if (suggestion[1].assign.condition) {
-                    const condition = suggestion[1].assign!.condition!
+            if (result.suggestion.assign) {
+                if (result.suggestion.assign.condition) {
+                    const condition = result.suggestion.assign!.condition!
 
                     if (condition.startsWith("in:")) {
                         const reg = new RegExp(value, 'i')
@@ -252,24 +260,24 @@ export default defineComponent({
                     }
                 }
 
-                if (suggestion[1].assign.example) {
+                if (result.suggestion.assign.example) {
                     const reg = new RegExp(value, 'i')
-                    const values = suggestion[1].assign.example.split(",")
+                    const values = result.suggestion.assign.example.split(",")
 
                     return {
                         from: node.from + offset,
 
                         options: values
-                            .filter(item => value == '' || reg.test(item))
+                            .filter(item => value === '' || reg.test(item))
                             .map(item => ({label: item, type: "text"}))
                     }
                 }
 
-                if (suggestion[1].assign.default) {
+                if (result.suggestion.assign.default) {
                     return {
                         from: node.from + offset,
 
-                        options: [{label: suggestion[1].assign.default, type: "constant"}]
+                        options: [{label: result.suggestion.assign.default, type: "constant"}]
                     }
                 }
             }
@@ -328,9 +336,9 @@ export default defineComponent({
                     const value = view.state.sliceDoc(node.from, node.to)
                     const index = value.indexOf(".", pos - node.from)
 
-                    const suggestion = findSuggestion(node.name === "ContainerIdentifier" ? props.containerSuggestions : props.keySuggestions, index != -1 ? value.substring(0, index) : value)
+                    const result = findSuggestion(node.name === "ContainerIdentifier" ? props.containerSuggestions : props.keySuggestions, index != -1 ? value.substring(0, index) : value)
 
-                    if (suggestion) {
+                    if (result.suggestion) {
                         return {
                             pos,
                             above: true,
@@ -339,7 +347,7 @@ export default defineComponent({
                             create: () => {
                                 const element = document.createElement("div")
                                 element.className = "cm-tooltip-cursor"
-                                element.textContent = suggestion[1].title
+                                element.textContent = result.suggestion!.title
 
                                 return {dom: element}
                             }

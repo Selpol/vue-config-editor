@@ -139,13 +139,13 @@ class StateMachineValueEnd implements StateMachineItem {
             prev = prev.prevSibling
 
             if (prev && prev.name === "ValueIdentifier") {
-                const suggestion = findSuggestion(context.keySuggestions, context.view.state.sliceDoc(prev.from, prev.to))
+                const result = findSuggestion(context.keySuggestions, context.view.state.sliceDoc(prev.from, prev.to))
 
-                if (suggestion && suggestion[1].assign) {
+                if (result.suggestion && result.suggestion.assign) {
                     const value = context.view.state.sliceDoc(node.from, node.to).trim()
-                    const assign = suggestion[1].assign
+                    const assign = result.suggestion.assign
 
-                    if (assign.default && assign.default == value) {
+                    if (assign.default && assign.default === value) {
                         state.diagnostics.push({
                             from: prev.from,
                             to: node.to,
@@ -176,7 +176,7 @@ class StateMachineValueEnd implements StateMachineItem {
                             const parse = parseInt(value)
                             const values = assign.condition.substring(8).split(",").map(item => parseInt(item)).filter(item => !isNaN(item))
 
-                            if (values.length == 2 && (parse < values[0] || parse > values[1])) {
+                            if (values.length === 2 && (parse < values[0] || parse > values[1])) {
                                 state.diagnostics.push({
                                     from: node.from,
                                     to: node.to,
@@ -188,7 +188,7 @@ class StateMachineValueEnd implements StateMachineItem {
                     }
 
                     if (assign.type) {
-                        if (assign.type == "float") {
+                        if (assign.type === "float") {
                             if (isNaN(parseFloat(value))) {
                                 state.diagnostics.push({
                                     from: node.from,
@@ -197,7 +197,7 @@ class StateMachineValueEnd implements StateMachineItem {
                                     message: context.lang.lint.value.float
                                 })
                             }
-                        } else if (assign.type == "int") {
+                        } else if (assign.type === "int") {
                             if (isNaN(parseInt(value))) {
                                 state.diagnostics.push({
                                     from: node.from,
@@ -206,7 +206,7 @@ class StateMachineValueEnd implements StateMachineItem {
                                     message: context.lang.lint.value.int
                                 })
                             }
-                        } else if (assign.type == "bool") {
+                        } else if (assign.type === "bool") {
                             if (!["true", "false"].includes(value)) {
                                 state.diagnostics.push({
                                     from: node.from,
