@@ -10,8 +10,6 @@ export default interface Lang {
         }
 
         value: {
-            default: string
-
             unknown: string
             assign: string
             missing: string

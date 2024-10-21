@@ -57,20 +57,24 @@ class StateMachineContainerIdentifier implements StateMachineItem {
     }
 
     public onError(state: StateMachine, context: StateMachineContext, node: SyntaxNodeRef) {
-        state.diagnostics.push({
-            from: node.to - 1,
-            to: node.to - 1,
-            severity: "error",
-            message: context.lang.lint.container.end,
-            actions: [
-                {
-                    name: context.lang.lint.fix,
-                    apply(view, from, to) {
-                        view.dispatch({changes: {from, to, insert: "]"}})
+        const prev = node.node.prevSibling
+
+        if (prev && prev.name === "ContainerIdentifier") {
+            state.diagnostics.push({
+                from: prev.to,
+                to: prev.to,
+                severity: "error",
+                message: context.lang.lint.container.end,
+                actions: [
+                    {
+                        name: context.lang.lint.fix,
+                        apply(view, from, to) {
+                            view.dispatch({changes: {from, to, insert: "]"}})
+                        }
                     }
-                }
-            ]
-        })
+                ]
+            })
+        }
     }
 }
 
@@ -97,20 +101,24 @@ class StateMachineValueStart implements StateMachineItem {
     }
 
     onError(state: StateMachine, context: StateMachineContext, node: SyntaxNodeRef) {
-        state.diagnostics.push({
-            from: node.to - 1,
-            to: node.to - 1,
-            severity: "error",
-            message: context.lang.lint.value.assign,
-            actions: [
-                {
-                    name: "Fix",
-                    apply(view, from, to) {
-                        view.dispatch({changes: {from, to, insert: "="}})
+        const prev = node.node.prevSibling
+
+        if (prev && prev.name === "ValueIdentifier") {
+            state.diagnostics.push({
+                from: node.to,
+                to: node.to,
+                severity: "error",
+                message: context.lang.lint.value.assign,
+                actions: [
+                    {
+                        name: context.lang.lint.fix,
+                        apply(view, from, to) {
+                            view.dispatch({changes: {from, to, insert: "="}})
+                        }
                     }
-                }
-            ]
-        })
+                ]
+            })
+        }
     }
 }
 
