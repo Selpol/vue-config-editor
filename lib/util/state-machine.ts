@@ -105,8 +105,8 @@ class StateMachineValueStart implements StateMachineItem {
 
         if (prev && prev.name === "ValueIdentifier") {
             state.diagnostics.push({
-                from: node.to,
-                to: node.to,
+                from: prev.to,
+                to: prev.to,
                 severity: "error",
                 message: context.lang.lint.value.assign,
                 actions: [
