@@ -2,7 +2,7 @@ import {defineComponent, h, type PropType} from "vue"
 import {Codemirror} from "vue-codemirror"
 
 import type {Extension} from "@codemirror/state"
-import {syntaxTree} from "@codemirror/language"
+import {LanguageSupport, LRLanguage, syntaxTree} from "@codemirror/language"
 import type {CompletionContext, CompletionResult} from "@codemirror/autocomplete"
 import {linter} from "@codemirror/lint"
 import {hoverTooltip} from "@codemirror/view"
@@ -17,6 +17,11 @@ import {findSuggestion, StateMachine, type StateMachineContext} from "../util"
 import type Lang from "../lang"
 import en from "../lang/en.ts"
 
+export interface Grammar {
+    language: LRLanguage
+    support: () => LanguageSupport
+}
+
 export default defineComponent({
     props: {
         modelValue: {type: String, required: true},
@@ -30,7 +35,8 @@ export default defineComponent({
 
         extensions: {type: Array as PropType<Extension[]>, default: null},
 
-        lang: {type: Object as PropType<Lang>, default: () => en}
+        lang: {type: Object as PropType<Lang>, default: () => en},
+        grammar: {type: Object as PropType<Grammar>, default: () => ({language: ConfigLELanguage, support: config})}
     },
     emits: ['update:modelValue'],
     setup(props, ctx) {
@@ -298,8 +304,8 @@ export default defineComponent({
         const state = new StateMachine()
 
         const extensions: Extension[] = [
-            config(),
-            ConfigLELanguage.data.of({
+            props.grammar.support(),
+            props.grammar.language.data.of({
                 autocomplete: (context: CompletionContext): Promise<CompletionResult | null> | CompletionResult | null => {
                     let node = syntaxTree(context.state).resolveInner(context.pos, -1)
 
