@@ -28,7 +28,7 @@ value {
 
     ValueIdentifier { (Identifier Separator?)+ }
 
-    String { $[а-яА-Яa-zA-Z0-9_:/.,\-% ]+ (NewLine | @eof) }
+    String { $[а-яА-Яa-zA-Z0-9_:/.,\-%\\ ]+ (NewLine | @eof) }
 
     Number { $[0-9.]+ (NewLine | @eof) }
     Boolean { "true" | "false" (NewLine | @eof) }
